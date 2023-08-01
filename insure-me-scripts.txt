@@ -1,0 +1,66 @@
+Insure-me 1st build ( from git checkout to test-server)
+
+node{
+        stage('git checkout'){
+            echo "checking out the code from github"
+            git 'https://github.com/zaigam007/insurance-me.git'
+        }
+        
+        stage('maven build'){
+            sh 'mvn clean package'
+        }
+        
+        stage('build docker image'){
+            sh 'docker build -t zaigam/insure-me:2.0 .'
+        }
+        
+        stage('push docker image to docker hub registry')
+        {
+            echo 'pushing images to registry'
+            
+            withCredentials([string(credentialsId: 'dockerPwd', variable: 'dockerhubPwd')]) {
+                sh "docker login -u zaigam -p ${dockerhubPwd}"
+                sh 'docker push zaigam/insure-me:2.0'
+            }
+        }
+        
+        stage('configure test-server and deploy insure-me'){
+            echo "configuring test-server"
+            ansiblePlaybook become: true, credentialsId: 'ssh-key', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-playbook-test.yml'
+        }
+        
+}    
+        
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+2nd build selenium-testing
+
+node{
+        stage('checkout scripts'){
+            echo "checking out the selenium script from github"
+            git 'https://github.com/zaigam007/insurance-me.git'
+        }
+        
+        stage('execute test-scripts'){
+            sh 'java -jar insure-me-runnable.jar'
+        }
+}    
+    
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+3rd build prod-deploy
+
+
+node{
+        stage('git checkout'){
+            echo "checking out the code from github"
+            git 'https://github.com/zaigam007/insurance-me.git'
+        }
+        
+        stage('deploy to prod server'){
+            ansiblePlaybook become: true, credentialsId: 'ssh-key', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-playbook.yml'
+        }
+}    
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------        
+       
