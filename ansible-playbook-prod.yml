@@ -17,4 +17,4 @@
     become_user : root
 
   - name: Deploy Docker Container
-    command: docker run -itd -p 8084:8081 zaigam/insure-me:2.0
+    command: docker run -itd -p 8084:8081 zaigam/insure-me:1.0
